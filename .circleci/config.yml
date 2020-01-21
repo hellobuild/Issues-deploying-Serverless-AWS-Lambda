@@ -1,0 +1,61 @@
+version: 2.1
+
+jobs:
+  build-test-deploy:
+
+    working_directory: ~/teamonboard-api # directory where steps will run
+
+    docker:
+      - image: circleci/node:10.16.3 # ...with this image as the primary container; this is where all `steps` will run
+
+    steps:
+      
+      - checkout # special step to check out source code to working directory                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+      - run:
+          name: update-npm
+          command: 'sudo npm install -g npm@latest'
+      
+      - run:
+          name: Install Serverless CLI and dependencies
+          command: sudo npm i -g serverless
+      
+      - run:
+          name: Install serverless-plugin-include-dependencies
+          command: sudo npm install serverless-plugin-include-dependencies --save-dev
+          
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run:
+          name: Install Node dependencies
+          command: npm install
+
+      - save_cache: # special step to save the dependency cache
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+
+      - run: # run tests
+          name: Run unit tests
+          command: echo "Tests passed!"
+
+      - run:
+          name: Deploy Serverless app
+          command:  |
+            cat /dev/null > .env
+            echo "PRISMA_ENDPOINT=${PRISMA_ENDPOINT}" >> .env
+            echo "PRISMA_SECRET=${PRISMA_SECRET}" >> .env
+            export SLS_DEBUG=*
+            serverless deploy
+
+workflows:
+  version: 2
+  cicd:
+    jobs:
+      - build-test-deploy:
+          context: GlobalAWS

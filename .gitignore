@@ -1,0 +1,9 @@
+# package directories
+node_modules
+jspm_packages
+prisma/dev.db
+
+# Serverless directories
+.serverless
+.env
+.env.local
